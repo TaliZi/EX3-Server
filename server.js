@@ -60,20 +60,26 @@ app.post("/api/users", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-app.get("/api/users/:id", async (req, res) => {
+
+app.get("/api/posts", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.json(user);
+    // Access user information from req.user
+    const userEmail = req.user.email;
+    // Logic to fetch user's feed based on friends
+    const posts = await Post.find({ user: { $in: user.friends } })
+      .sort({ date: -1 })
+      .limit(20);
+    // Additional logic to fetch posts of non-friends
+    const nonFriendPosts = await Post.find({ user: { $nin: user.friends } })
+      .sort({ date: -1 })
+      .limit(5);
+
+    res.json({ posts: [...posts, ...nonFriendPosts] });
   } catch (error) {
-    console.error("Error fetching user:", error);
+    console.error("Error fetching posts:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-
 app.post("/api/tokens", async (req, res) => {
   try {
     const { email, password } = req.body;
