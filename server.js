@@ -101,6 +101,56 @@ app.delete("/api/users/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+app.get("/api/users/:id/posts", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userEmail = req.user.email;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Fetch posts belonging to the user with the specified ID
+    const posts = await Post.find({ user: req.params.id }).sort({ date: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.post("/api/users/:id/posts", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userEmail = req.user.email;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Extract post data from the request body
+    const { message } = req.body;
+
+    // Create a new post
+    const newPost = new Post({
+      user: req.params.id,
+      message,
+    });
+
+    // Save the new post to the database
+    await newPost.save();
+
+    res
+      .status(201)
+      .json({ message: "Post created successfully", post: newPost });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 app.get("/api/posts", verifyToken, async (req, res) => {
   try {
