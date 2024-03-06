@@ -265,6 +265,81 @@ app.post("/api/users/:id/friends", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+app.patch("/api/users/:id/friends/:fid", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userId = req.user.id;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== userId) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Extract friend's ID from the request parameters
+    const friendId = req.params.fid;
+
+    // Find the user and the friend in the database
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    // Check if the friend exists
+    if (!friend) {
+      return res.status(404).json({ error: "Friend not found" });
+    }
+
+    // Check if the friend request exists
+    if (!user.friends.includes(friendId)) {
+      return res.status(404).json({ error: "Friend request not found" });
+    }
+
+    // Confirm the friend request by adding the user to the friend's friends list
+    await User.findByIdAndUpdate(
+      friendId,
+      { $addToSet: { friends: userId } },
+      { new: true }
+    );
+
+    // Remove the friend request from the user's friends list
+    user.friends.pull(friendId);
+    await user.save();
+
+    res.json({ message: "Friend request confirmed successfully" });
+  } catch (error) {
+    console.error("Error confirming friend request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.delete("/api/users/:id/friends/:fid", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userId = req.user.id;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== userId) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Extract friend's ID from the request parameters
+    const friendId = req.params.fid;
+
+    // Find the user in the database
+    const user = await User.findById(userId);
+
+    // Check if the friend exists
+    if (!user.friends.includes(friendId)) {
+      return res.status(404).json({ error: "Friend not found" });
+    }
+
+    // Remove the friend from the user's friends list
+    user.friends.pull(friendId);
+    await user.save();
+
+    res.json({ message: "Friend deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting friend:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.get("/api/posts", verifyToken, async (req, res) => {
   try {
