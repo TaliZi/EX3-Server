@@ -205,7 +205,66 @@ app.delete("/api/users/:id/posts/:pid", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+app.get("/api/users/:id/friends", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userId = req.user.id;
 
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== userId) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Fetch the user's friends list from the database
+    const user = await User.findById(userId).populate("friends", "name email");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ friends: user.friends });
+  } catch (error) {
+    console.error("Error fetching friends list:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.post("/api/users/:id/friends", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userId = req.user.id;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== userId) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Extract friend's ID from the request body
+    const { friendId } = req.body;
+
+    // Check if the friend's ID is provided
+    if (!friendId) {
+      return res.status(400).json({ error: "Friend ID is required" });
+    }
+
+    // Check if the friend's ID is valid
+    const friend = await User.findById(friendId);
+    if (!friend) {
+      return res.status(404).json({ error: "Friend not found" });
+    }
+
+    // Add the friend to the user's friends list
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { friends: friendId } },
+      { new: true }
+    );
+
+    res.json({ message: "Friend request sent successfully", user });
+  } catch (error) {
+    console.error("Error adding friend:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.get("/api/posts", verifyToken, async (req, res) => {
   try {
