@@ -150,6 +150,61 @@ app.post("/api/users/:id/posts", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+app.put("/api/users/:id/posts/:pid", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userEmail = req.user.email;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Extract updated post data from the request body
+    const { message } = req.body;
+
+    // Find the post by ID and update it
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.pid,
+      { message },
+      { new: true }
+    );
+
+    // Check if the post exists
+    if (!updatedPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    res.json({ message: "Post updated successfully", post: updatedPost });
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.delete("/api/users/:id/posts/:pid", verifyToken, async (req, res) => {
+  try {
+    // Access user information from req.user
+    const userEmail = req.user.email;
+
+    // Check if the requested user is the same as the authenticated user
+    if (req.params.id !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Find the post by ID and delete it
+    const deletedPost = await Post.findByIdAndDelete(req.params.pid);
+
+    // Check if the post exists
+    if (!deletedPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    res.json({ message: "Post deleted successfully", post: deletedPost });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 
 app.get("/api/posts", verifyToken, async (req, res) => {
