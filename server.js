@@ -356,7 +356,7 @@ app.post("/api/tokens", async (req, res) => {
     }
     // Generate JWT token
     const token = jwt.sign({ email: user.email }, "secret_key");
-    res.json({ token });
+    res.json({ token, id: user._id });
   } catch (error) {
     console.error("Error generating token:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -412,7 +412,30 @@ app.patch(
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+); // Decline Friend Request Endpoint
+app.patch(
+  "/api/users/:requestingUserId/decline-friend-request",
+  async (req, res) => {
+    try {
+      const { requestingUserId } = req.params;
+      const decliningUserId = req.body.user._id; // Assuming you have middleware to extract user ID from JWT
+
+      // Remove requestingUserId from friendRequestsReceived of declining user
+      await User.findByIdAndUpdate(decliningUserId, {
+        $pull: { friendRequestsReceived: requestingUserId },
+      });
+      await User.findByIdAndUpdate(requestingUserId, {
+        $pull: { friendRequestsSent: decliningUserId },
+      });
+
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error declining friend request:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 );
+
 app.post("/api/register", async (req, res) => {
   try {
     const { name, email, password, image } = req.body;
@@ -483,5 +506,5 @@ app.post("/api/login", async (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log("Server is running on port ${PORT}");
 });
