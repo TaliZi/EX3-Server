@@ -1,6 +1,6 @@
 # EX3-Server
 
-## This project is the backend of the web application of facebook.
+## This project is the backend of facebook application.
 
 ### Made by: Tali Zikel, Aviya Megiddo Shaked, and Michal Magid.
 
