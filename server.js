@@ -405,6 +405,10 @@ app.patch(
       await User.findByIdAndUpdate(approvingUserId, {
         $pull: { friendRequestsReceived: requestingUserId },
       });
+      // new - Remove approvingUserId from friendRequestsSent of requesting user
+      await User.findByIdAndUpdate(requestingUserId, {
+        $pull: { friendRequestsSent: approvingUserId },
+      });
 
       // Add approvingUserId to friends of requesting user
       await User.findByIdAndUpdate(requestingUserId, {
