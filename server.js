@@ -289,7 +289,7 @@ app.patch("/api/users/:id/friends/:fid", verifyToken, async (req, res) => {
 // DELETE /api/users/:id/friends/:fid
 app.delete("/api/users/:id/friends/:fid", verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.params.id;
     const friendId = req.params.fid;
 
     const user = await User.findById(userId);
@@ -298,8 +298,16 @@ app.delete("/api/users/:id/friends/:fid", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Friend not found" });
     }
 
+    const friend = await User.findById(friendId);
+
+    if (!friend.friends.includes(userId)) {
+      return res.status(404).json({ error: "Friend not found" });
+    }
+
     user.friends.pull(friendId);
     await user.save();
+    friend.friends.pull(userId);
+    await friend.save();
 
     res.json({ message: "Friend deleted successfully" });
   } catch (error) {
@@ -506,5 +514,5 @@ app.post("/api/login", async (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log("Server is running on port ${PORT}");
+  console.log(`Server is running on port ${PORT}`);
 });
