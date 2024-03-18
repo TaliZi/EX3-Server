@@ -12,7 +12,7 @@
 ## In this project we created 3 screens: 
  1. Login screen
  2. Registration screen
- 3. Feed screen. 
+ 3. Feed screen
 
 
 ## Run:
