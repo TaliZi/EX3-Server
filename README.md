@@ -10,9 +10,9 @@
 ### We preferred to divide the work in this way to optimize our time.
 
 ## In this project we created 3 screens: 
-## 1. Login screen
-## 2. Registration screen
-## 3. Feed screen.*
+ 1. Login screen
+ 2. Registration screen
+ 3. Feed screen. 
 
 
 ## Run:
