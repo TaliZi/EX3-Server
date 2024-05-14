@@ -4,9 +4,12 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const net = require("net");
 
 const { jwtDecode } = require("jwt-decode");
 const { Post, User } = require("./models");
+
+require('dotenv').config();
 
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
@@ -40,6 +43,38 @@ mongoose
   .connect("mongodb://localhost:27017/myapp")
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Error connecting to MongoDB", err));
+
+// Create bloom filter client instance and establish connection
+const bloomFilterClient = net.createConnection({ 
+  host: process.env.BLOOM_FILTER_HOSTNAME, 
+  port: process.env.BLOOM_FILTER_PORT
+});
+bloomFilterClient.on('connect', async () => {
+    console.log('Connected to bloom-filter server');
+    await sendMessageToBloomFilter(process.env.BLOOM_FILTER_CONFIG);
+    const blocklist = process.env.BLOCKLIST.split(';');
+    for (const url of blocklist) {
+        await sendMessageToBloomFilter(`1 ${url.trim()}`);
+    };
+});
+bloomFilterClient.on('error', (err) => {
+    console.error('Error connecting to bloom-filter server:', err);
+});
+
+const sendMessageToBloomFilter = async (message) => {
+    return new Promise((resolve, reject) => {
+        console.log(`sending message to filter: [${message}]`);
+        bloomFilterClient.write(message);
+        bloomFilterClient.once('data', (data) => {
+          console.log(`received message from filter: [${data.toString()}]`);
+            resolve(data.toString());
+        });
+        bloomFilterClient.once('error', (err) => {
+            console.log(`received error from filter:`, err);
+            reject(err);
+        });
+    });
+};
 
 app.post("/api/users", async (req, res) => {
   try {
@@ -166,6 +201,19 @@ app.post("/api/users/:id/posts", verifyToken, async (req, res) => {
     // Extract post data from the request body
     const { message } = req.body;
     const { image } = req.body;
+
+    const urls = message.match(/\bhttps?:\/\/\S+/gi);
+    if (urls) {
+        for (const url of urls) {
+            const parsedUrl = new URL(url);
+            const hostnameWithoutScheme = parsedUrl.hostname;
+            const result = await sendMessageToBloomFilter(`2 ${hostnameWithoutScheme}`);
+            if (result === 'true true') {
+              res.status(400).json({ error: "Message contains malicious URL" });
+              return;
+            }
+        };
+    }
 
     // Create a new post
     const newPost = new Post({
