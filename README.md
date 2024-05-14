@@ -1,20 +1,3 @@
-# EX3-Server
-
-## This project is the backend of facebook application.
-
-### Made by: Tali Zikel, Aviya Megiddo Shaked, and Michal Magid.
-
-### In this task, we were divided into subgroups.
-### Tali made the app on Android (frontend), and the server (backend) of the whole program.
-### Aviya and Michal made the web site (frontend).
-### We preferred to divide the work in this way to optimize our time.
-
-## In this project we created 3 screens: 
- 1. Login screen
- 2. Registration screen
- 3. Feed screen
-
-
 ## Run:
 ### In the server directory, you should run the commands below:
 
